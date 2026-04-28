@@ -4,16 +4,19 @@ const reminderSchema = new mongoose.Schema({
     medicine: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Medicine',
-        required: true
+        required: true,
+        index: true
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
     scheduledTime: {
         type: Date,
-        required: true
+        required: true,
+        index: true
     },
     status: {
         type: String,

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const xss = require('xss');
 const User = require('../models/User');
 
 const generateToken = (id) => {
@@ -9,7 +10,9 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const name = xss(req.body.name?.trim());
+        const email = xss(req.body.email?.trim().toLowerCase());
+        const { password } = req.body;
 
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -81,3 +84,24 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+exports.refreshToken = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true });
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        res.json({
+            token: generateToken(user._id),
+        });
+    } catch (error) {
+        res.status(401).json({ message: 'Invalid token' });
+    }
+};

@@ -48,6 +48,27 @@ const scheduleReminders = async (medicine, userId) => {
 };
 
 const initReminderScheduler = () => {
+    // Cleanup old sent/missed reminders on startup
+    const cleanupOldReminders = async () => {
+        try {
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const result = await Reminder.deleteMany({
+                status: { $in: ['sent', 'missed'] },
+                scheduledTime: { $lt: oneWeekAgo },
+            });
+            if (result.deletedCount > 0) {
+                console.log(`Cleaned up ${result.deletedCount} old reminders`);
+            }
+        } catch (err) {
+            console.error('Cleanup error:', err);
+        }
+    };
+
+    // Run cleanup immediately and then daily
+    cleanupOldReminders();
+    schedule.scheduleJob('0 0 * * *', cleanupOldReminders);
+
+    // Periodic check for pending reminders that might have been missed
     schedule.scheduleJob('* * * * *', async () => {
         try {
             const now = new Date();
@@ -81,4 +102,3 @@ module.exports = {
     initReminderScheduler,
     clearOldJobs,
 };
-

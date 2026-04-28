@@ -1,3 +1,4 @@
+const xss = require('xss');
 const Medicine = require('../models/Medicine');
 const History = require('../models/History');
 const Reminder = require('../models/Reminder');
@@ -5,7 +6,9 @@ const { scheduleReminders } = require('../utils/reminderScheduler');
 
 exports.addMedicine = async (req, res) => {
     try {
-        const { name, quantity, dosagePerDay, reminderTimes, startDate, endDate, instructions, unit, familyMember } = req.body;
+        const name = xss(req.body.name?.trim());
+        const instructions = xss(req.body.instructions?.trim() || '');
+        const { quantity, dosagePerDay, reminderTimes, startDate, endDate, unit, familyMember } = req.body;
 
         const medicine = await Medicine.create({
             name,
@@ -34,8 +37,21 @@ exports.getMedicines = async (req, res) => {
         const query = { user: req.user._id };
         if (familyMember) query.familyMember = familyMember;
 
-        const medicines = await Medicine.find(query).sort({ createdAt: -1 });
-        res.json(medicines);
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 20;
+        const skip = (page - 1) * limit;
+
+        const [medicines, total] = await Promise.all([
+            Medicine.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Medicine.countDocuments(query),
+        ]);
+
+        res.json({
+            medicines,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

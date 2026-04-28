@@ -14,12 +14,26 @@ exports.getHistory = async (req, res) => {
             if (endDate) query.takenAt.$lte = new Date(endDate);
         }
 
-        const history = await History.find(query)
-            .populate('medicine', 'name unit')
-            .populate('familyMember', 'name relationship')
-            .sort({ takenAt: -1 });
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 20;
+        const skip = (page - 1) * limit;
 
-        res.json(history);
+        const [history, total] = await Promise.all([
+            History.find(query)
+                .populate('medicine', 'name unit')
+                .populate('familyMember', 'name relationship')
+                .sort({ takenAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            History.countDocuments(query),
+        ]);
+
+        res.json({
+            history,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

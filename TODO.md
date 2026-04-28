@@ -1,37 +1,31 @@
-# MediTrack Implementation TODO
+# MediTrack Fix Implementation TODO
 
-## Phase 1: Backend Setup
-- [x] 1.1 Create backend directory structure
-- [x] 1.2 Create backend package.json
-- [x] 1.3 Create MongoDB config (config/db.js)
-- [x] 1.4 Create Mongoose models (User, Medicine, Reminder, History)
-- [x] 1.5 Create JWT authentication middleware
-- [x] 1.6 Create auth controller (register, login, getProfile)
-- [x] 1.7 Create medicine controller (add, get, update, delete, markTaken)
-- [x] 1.8 Create reminder controller (schedule, getUpcoming)
-- [x] 1.9 Create family controller (addMember, getMembers)
-- [x] 1.10 Create Express routes
-- [x] 1.11 Create reminder scheduler utility
-- [x] 1.12 Create server.js entry point
-- [x] 1.13 Create .env.example
+## Phase 1: Critical Fixes (15 min)
+- [x] Fix 2: Auth Middleware - Add return statements to prevent header errors
+- [x] Fix 3: Backend .env - Add MONGODB_URI placeholder and FRONTEND_URL
+- [x] Fix 4: Frontend .env.local - Create file with REACT_APP_API_URL
+- [x] Fix 5: Root .gitignore - Create comprehensive .gitignore
 
-## Phase 2: Frontend Setup
-- [x] 2.1 Create frontend directory structure
-- [x] 2.2 Create frontend package.json
-- [x] 2.3 Configure Tailwind CSS
-- [x] 2.4 Create API service with Axios
-- [x] 2.5 Create AuthContext
-- [x] 2.6 Create pages (Login, Register, Dashboard, AddMedicine, MedicineList, History, Family, Profile)
-- [x] 2.7 Create components (Navbar, Sidebar, MedicineCard, alerts)
-- [x] 2.8 Create App.js with routing
-- [x] 2.9 Create index.html and service worker
-- [x] 2.10 Add responsive styling
+## Phase 2: Security & Stability (1.5 hr)
+- [x] Fix 6: Install express-validator, create validation middleware, apply to routes
+- [x] Fix 7: Create errorHandler middleware, add to server.js
+- [x] Fix 8: Install express-rate-limit, add rate limiting to server.js
+- [x] Fix 9: Install xss, sanitize inputs in controllers
+- [x] Fix 10: Install morgan, add HTTP logging to server.js
 
-## Phase 3: Integration & Final Files
-- [x] 3.1 Create README.md
-- [x] 3.2 Verify all imports and connections
-- [x] 3.3 Final testing checklist
-- [x] 3.4 Fix VS Code CSS validation warnings
-- [x] 3.5 Fix browser compatibility warnings
-- [x] 3.6 Install dependencies and start servers
+## Phase 3: Performance & UX (1.5 hr)
+- [x] Fix 11: Refactor scheduler to persist jobs, add cleanup
+- [x] Fix 12: Create ErrorBoundary component, wrap App.js
+- [x] Fix 13: Add token refresh logic (backend endpoint + AuthContext)
+- [x] Fix 14: Add database indexes to all models
+- [x] Fix 15: Add pagination to getMedicines and getHistory
 
+## Verification
+- [x] Backend starts without errors
+- [x] Frontend connects to backend
+- [x] Registration/Login flow works
+- [x] Medicine CRUD works
+- [x] Validation errors display correctly
+- [x] Rate limiting active
+- [x] Error boundary catches errors
+- [x] Pagination works

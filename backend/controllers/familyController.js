@@ -1,9 +1,12 @@
+const xss = require('xss');
 const FamilyMember = require('../models/FamilyMember');
 const Medicine = require('../models/Medicine');
 
 exports.addFamilyMember = async (req, res) => {
     try {
-        const { name, relationship, age, medicalNotes } = req.body;
+        const name = xss(req.body.name?.trim());
+        const medicalNotes = xss(req.body.medicalNotes?.trim() || '');
+        const { relationship, age } = req.body;
 
         const familyMember = await FamilyMember.create({
             name,

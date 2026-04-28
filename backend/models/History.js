@@ -9,12 +9,14 @@ const historySchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
     familyMember: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'FamilyMember',
-        default: null
+        default: null,
+        index: true
     },
     medicineName: {
         type: String,
@@ -35,7 +37,8 @@ const historySchema = new mongoose.Schema({
     },
     takenAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        index: true
     },
     notes: {
         type: String,

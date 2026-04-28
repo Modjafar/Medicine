@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const { addMedicineValidation } = require('../middleware/validation');
 const {
     addMedicine,
     getMedicines,
@@ -12,7 +13,7 @@ const {
     getDashboardStats,
 } = require('../controllers/medicineController');
 
-router.post('/', protect, addMedicine);
+router.post('/', protect, addMedicineValidation, addMedicine);
 router.get('/', protect, getMedicines);
 router.get('/stats', protect, getDashboardStats);
 router.get('/low-stock', protect, getLowStockMedicines);
