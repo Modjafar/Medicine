@@ -1,47 +1,49 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Pill, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Pill } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useForm from '../hooks/useForm';
+import FormInput from '../components/FormInput';
+import ErrorMessage from '../components/ErrorMessage';
 
 const Register = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-    });
-    const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
     const { register } = useAuth();
     const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            toast.error('Passwords do not match');
-            return;
+    const {
+        values,
+        errors,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        isSubmitting,
+    } = useForm(
+        { name: '', email: '', password: '', confirmPassword: '' },
+        {
+            name: { required: true, minLength: 2 },
+            email: { required: true, email: true },
+            password: { required: true, minLength: 6 },
+            confirmPassword: { 
+                required: true, 
+                match: 'password',
+                matchMessage: 'Passwords do not match'
+            },
+        },
+        async (formValues) => {
+            setSubmitError(null);
+            try {
+                await register(formValues.name, formValues.email, formValues.password);
+                toast.success('Account created successfully!');
+                navigate('/');
+            } catch (error) {
+                const message = error.friendlyMessage || error.message || 'Registration failed. Please try again.';
+                setSubmitError(message);
+                toast.error(message);
+            }
         }
-        if (formData.password.length < 6) {
-            toast.error('Password must be at least 6 characters');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            await register(formData.name, formData.email, formData.password);
-            toast.success('Account created successfully!');
-            navigate('/');
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Registration failed');
-        } finally {
-            setLoading(false);
-        }
-    };
+    );
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4">
@@ -55,74 +57,79 @@ const Register = () => {
                 </div>
 
                 <div className="card">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="Enter your full name"
-                                required
-                            />
-                        </div>
+                    {submitError && (
+                        <ErrorMessage 
+                            message={submitError} 
+                            variant="banner" 
+                            onDismiss={() => setSubmitError(null)}
+                            className="mb-4"
+                        />
+                    )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="Enter your email"
-                                required
-                            />
-                        </div>
+                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                        <FormInput
+                            label="Full Name"
+                            name="name"
+                            type="text"
+                            value={values.name}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.name}
+                            required
+                            placeholder="Enter your full name"
+                            autoComplete="name"
+                        />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="input-field pr-10"
-                                    placeholder="Create a password"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
-                        </div>
+                        <FormInput
+                            label="Email"
+                            name="email"
+                            type="email"
+                            value={values.email}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.email}
+                            required
+                            placeholder="Enter your email"
+                            autoComplete="email"
+                        />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="Confirm your password"
-                                required
-                            />
-                        </div>
+                        <FormInput
+                            label="Password"
+                            name="password"
+                            type="password"
+                            value={values.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.password}
+                            required
+                            placeholder="Create a password (min 6 characters)"
+                            showToggle
+                            autoComplete="new-password"
+                        />
+
+                        <FormInput
+                            label="Confirm Password"
+                            name="confirmPassword"
+                            type="password"
+                            value={values.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.confirmPassword}
+                            required
+                            placeholder="Confirm your password"
+                            autoComplete="new-password"
+                        />
 
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5"
+                            disabled={isSubmitting}
+                            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                         >
-                            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Create Account'}
+                            {isSubmitting ? (
+                                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                'Create Account'
+                            )}
                         </button>
                     </form>
 
@@ -141,4 +148,3 @@ const Register = () => {
 };
 
 export default Register;
-

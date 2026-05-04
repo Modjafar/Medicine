@@ -1,33 +1,43 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Pill, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Pill } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useForm from '../hooks/useForm';
+import FormInput from '../components/FormInput';
+import ErrorMessage from '../components/ErrorMessage';
 
 const Login = () => {
-    const [formData, setFormData] = useState({ email: '', password: '' });
-    const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await login(formData.email, formData.password);
-            toast.success('Welcome back!');
-            navigate('/');
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
-        } finally {
-            setLoading(false);
+    const {
+        values,
+        errors,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        isSubmitting,
+    } = useForm(
+        { email: '', password: '' },
+        {
+            email: { required: true, email: true },
+            password: { required: true },
+        },
+        async (formValues) => {
+            setSubmitError(null);
+            try {
+                await login(formValues.email, formValues.password);
+                toast.success('Welcome back!');
+                navigate('/');
+            } catch (error) {
+                const message = error.friendlyMessage || error.message || 'Login failed. Please try again.';
+                setSubmitError(message);
+                toast.error(message);
+            }
         }
-    };
+    );
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4">
@@ -41,48 +51,53 @@ const Login = () => {
                 </div>
 
                 <div className="card">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="Enter your email"
-                                required
-                            />
-                        </div>
+                    {submitError && (
+                        <ErrorMessage 
+                            message={submitError} 
+                            variant="banner" 
+                            onDismiss={() => setSubmitError(null)}
+                            className="mb-4"
+                        />
+                    )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="input-field pr-10"
-                                    placeholder="Enter your password"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
-                        </div>
+                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                        <FormInput
+                            label="Email"
+                            name="email"
+                            type="email"
+                            value={values.email}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.email}
+                            required
+                            placeholder="Enter your email"
+                            autoComplete="email"
+                        />
+
+                        <FormInput
+                            label="Password"
+                            name="password"
+                            type="password"
+                            value={values.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={errors.password}
+                            required
+                            placeholder="Enter your password"
+                            showToggle
+                            autoComplete="current-password"
+                        />
 
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5"
+                            disabled={isSubmitting}
+                            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                         >
-                            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
+                            {isSubmitting ? (
+                                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                'Sign In'
+                            )}
                         </button>
                     </form>
 
@@ -101,4 +116,3 @@ const Login = () => {
 };
 
 export default Login;
-

@@ -1,14 +1,21 @@
-# TODO: Fix Frame Loading Error on localhost:3000
+# MediTrack Real-Time Reminder System Implementation
 
-## Steps to Complete:
+## Plan Summary
+**Goal**: Add popup notifications with alarm sound for medicine reminders
 
-- [ ] Step 1: Read current frontend/src/index.js content
-- [x] Step 2: Edit frontend/src/index.js to remove React.StrictMode (StrictMode removed, service worker file not found - safe single render now)
+**Current Status**: Backend scheduler exists. Frontend polls every 30s with basic UI. Missing: sound, "Taken" button, persistent toast.
 
-- [ ] Step 3: Read current frontend/src/components/ErrorBoundary.jsx content  
-- [x] Step 4: Edit ErrorBoundary.jsx to enhance frame error logging (file not found on disk, skipped)
+**Files to Update**:
+1. `frontend/src/components/ReminderAlert.jsx` - Add alarm sound + Taken button
+2. `frontend/src/context/NotificationContext.js` - Add sound state, reduce polling to 60s, toast notifications
+3. `frontend/public/medicine-alarm.mp3` - Alarm sound file
+4. `frontend/src/services/notificationService.js` - Reduce polling interval
+5. Add `useSound` hook if needed
 
-- [x] Step 5: Provide restart commands and testing instructions
+**Follow-up Steps**:
+1. Install react-use-sound (if needed)
+2. Test reminder flow end-to-end
+3. Update README.md with new features
 
-- [ ] Step 6: Mark complete and attempt_completion
+**Next Step**: Update ReminderAlert.jsx with alarm sound and buttons
 
