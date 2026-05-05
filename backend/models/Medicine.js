@@ -17,6 +17,11 @@ const medicineSchema = new mongoose.Schema({
         ref: 'FamilyMember',
         default: null
     },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     quantity: {
         type: Number,
         required: [true, 'Please provide quantity'],
@@ -55,6 +60,9 @@ const medicineSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// Unique index: no duplicate medicine names per user
+medicineSchema.index({ name: 1, user: 1 }, { unique: true });
 
 medicineSchema.virtual('daysRemaining').get(function () {
     if (this.quantity <= 0) return 0;

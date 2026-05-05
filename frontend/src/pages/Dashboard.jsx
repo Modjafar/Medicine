@@ -11,14 +11,15 @@ import {
     Plus,
 } from 'lucide-react';
 import api from '../services/api';
+import useReminder from '../hooks/useReminder';
 import MedicineCard from '../components/MedicineCard';
 import ReminderAlert from '../components/ReminderAlert';
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [lowStockMedicines, setLowStockMedicines] = useState([]);
-    const [upcomingReminders, setUpcomingReminders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { reminders, markAsTaken, snoozeReminder, dismissReminder } = useReminder();
 
     useEffect(() => {
         fetchDashboardData();
@@ -33,14 +34,12 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const [statsRes, lowStockRes, remindersRes] = await Promise.all([
+            const [statsRes, lowStockRes] = await Promise.all([
                 api.get('/medicines/stats'),
                 api.get('/medicines/low-stock'),
-                api.get('/reminders/upcoming'),
             ]);
             setStats(statsRes.data);
             setLowStockMedicines(lowStockRes.data);
-            setUpcomingReminders(remindersRes.data);
         } catch (error) {
             toast.error('Failed to load dashboard data');
         } finally {
@@ -58,25 +57,6 @@ const Dashboard = () => {
             fetchDashboardData();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to mark as taken');
-        }
-    };
-
-    const handleDismissReminder = async (reminderId) => {
-        try {
-            await api.post(`/reminders/${reminderId}/dismiss`);
-            fetchDashboardData();
-        } catch (error) {
-            toast.error('Failed to dismiss reminder');
-        }
-    };
-
-    const handleSnoozeReminder = async (reminderId) => {
-        try {
-            await api.post(`/reminders/${reminderId}/snooze`, { minutes: 10 });
-            toast.info('Reminder snoozed for 10 minutes');
-            fetchDashboardData();
-        } catch (error) {
-            toast.error('Failed to snooze reminder');
         }
     };
 
@@ -148,13 +128,14 @@ const Dashboard = () => {
                 })}
             </div>
 
-            {upcomingReminders.length > 0 && (
+            {reminders.length > 0 && (
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Reminders</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">🔔 Active Reminders</h2>
                     <ReminderAlert
-                        reminders={upcomingReminders}
-                        onDismiss={handleDismissReminder}
-                        onSnooze={handleSnoozeReminder}
+                        reminders={reminders}
+                        onDismiss={dismissReminder}
+                        onSnooze={snoozeReminder}
+                        onTaken={markAsTaken}
                     />
                 </div>
             )}

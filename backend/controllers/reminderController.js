@@ -20,7 +20,7 @@ exports.getUpcomingReminders = asyncHandler(async (req, res) => {
         scheduledTime: { $gte: now, $lte: tomorrow },
         status: { $in: ['pending', 'sent', 'snoozed'] },
     })
-        .populate('medicine', 'name dosagePerDay unit')
+        .populate('medicine', 'name dosagePerDay unit instructions')
         .sort({ scheduledTime: 1 });
 
     res.json(responseHandler.success(reminders, 'Upcoming reminders retrieved'));
@@ -40,8 +40,9 @@ exports.getTodayReminders = asyncHandler(async (req, res) => {
     const reminders = await Reminder.find({
         user: req.user._id,
         scheduledTime: { $gte: startOfDay, $lte: endOfDay },
+        status: { $in: ['pending', 'sent', 'snoozed'] },
     })
-        .populate('medicine', 'name dosagePerDay unit')
+        .populate('medicine', 'name dosagePerDay unit instructions')
         .sort({ scheduledTime: 1 });
 
     res.json(responseHandler.success(reminders, "Today's reminders retrieved"));
@@ -80,6 +81,30 @@ exports.snoozeReminder = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Mark reminder as taken
+ * @route   POST /api/reminders/:id/taken
+ * @access  Private
+ */
+exports.markReminderAsTaken = asyncHandler(async (req, res) => {
+    const reminder = await Reminder.findOneAndUpdate(
+        { _id: req.params.id, user: req.user._id },
+        {
+            status: 'taken',
+            sentAt: new Date(),
+        },
+        { new: true }
+    ).populate('medicine', 'name dosagePerDay unit instructions');
+
+    if (!reminder) {
+        throw new NotFoundError('Reminder', 'Reminder not found');
+    }
+
+    logger.logRequest(req, 'Reminder marked as taken', { reminderId: reminder._id });
+
+    res.json(responseHandler.success(reminder, 'Medicine marked as taken'));
+});
+
+/**
  * @desc    Dismiss a reminder (mark as missed)
  * @route   POST /api/reminders/:id/dismiss
  * @access  Private
@@ -110,7 +135,7 @@ exports.getReminderHistory = asyncHandler(async (req, res) => {
         user: req.user._id,
         status: { $in: ['taken', 'missed'] },
     })
-        .populate('medicine', 'name')
+        .populate('medicine', 'name instructions')
         .sort({ scheduledTime: -1 })
         .limit(50);
 

@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import FamilyMemberDashboard from './pages/FamilyMemberDashboard';
 import AddMedicine from './pages/AddMedicine';
 import MedicineList from './pages/MedicineList';
 import MedicineHistory from './pages/MedicineHistory';
@@ -28,6 +29,28 @@ const PublicRoute = ({ children }) => {
     return !user ? children : <Navigate to="/" />;
 };
 
+/**
+ * Admin-only route
+ */
+const AdminRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    if (loading) return <LoadingSpinner fullScreen text="Loading..." />;
+    if (!user) return <Navigate to="/login" />;
+    if (user.role !== 'admin') return <Navigate to="/" />;
+    return children;
+};
+
+/**
+ * Family-only route
+ */
+const FamilyRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    if (loading) return <LoadingSpinner fullScreen text="Loading..." />;
+    if (!user) return <Navigate to="/login" />;
+    if (user.role !== 'family') return <Navigate to="/" />;
+    return children;
+};
+
 function App() {
     return (
         <ErrorBoundary>
@@ -35,14 +58,87 @@ function App() {
                 <Router>
                     <ToastContainer position="top-right" autoClose={3000} />
                     <Routes>
+                        {/* Public Routes */}
                         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
                         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-                        <Route path="/" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
-                        <Route path="/medicines" element={<PrivateRoute><Layout><MedicineList /></Layout></PrivateRoute>} />
-                        <Route path="/medicines/add" element={<PrivateRoute><Layout><AddMedicine /></Layout></PrivateRoute>} />
-                        <Route path="/history" element={<PrivateRoute><Layout><MedicineHistory /></Layout></PrivateRoute>} />
-                        <Route path="/family" element={<PrivateRoute><Layout><FamilyManagement /></Layout></PrivateRoute>} />
-                        <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
+
+                        {/* Admin Routes */}
+                        <Route
+                            path="/"
+                            element={
+                                <AdminRoute>
+                                    <Layout>
+                                        <Dashboard />
+                                    </Layout>
+                                </AdminRoute>
+                            }
+                        />
+                        <Route
+                            path="/medicines"
+                            element={
+                                <AdminRoute>
+                                    <Layout>
+                                        <MedicineList />
+                                    </Layout>
+                                </AdminRoute>
+                            }
+                        />
+                        <Route
+                            path="/medicines/add"
+                            element={
+                                <AdminRoute>
+                                    <Layout>
+                                        <AddMedicine />
+                                    </Layout>
+                                </AdminRoute>
+                            }
+                        />
+                        <Route
+                            path="/history"
+                            element={
+                                <AdminRoute>
+                                    <Layout>
+                                        <MedicineHistory />
+                                    </Layout>
+                                </AdminRoute>
+                            }
+                        />
+                        <Route
+                            path="/family"
+                            element={
+                                <AdminRoute>
+                                    <Layout>
+                                        <FamilyManagement />
+                                    </Layout>
+                                </AdminRoute>
+                            }
+                        />
+
+                        {/* Family Member Routes */}
+                        <Route
+                            path="/my-medicines"
+                            element={
+                                <FamilyRoute>
+                                    <Layout>
+                                        <FamilyMemberDashboard />
+                                    </Layout>
+                                </FamilyRoute>
+                            }
+                        />
+
+                        {/* Shared Routes */}
+                        <Route
+                            path="/profile"
+                            element={
+                                <PrivateRoute>
+                                    <Layout>
+                                        <Profile />
+                                    </Layout>
+                                </PrivateRoute>
+                            }
+                        />
+
+                        {/* 404 */}
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </Router>

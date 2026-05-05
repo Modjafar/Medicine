@@ -4,6 +4,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { NotFoundError } = require('../utils/errors');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
+const { sendInviteEmail } = require('../utils/emailService');
 
 /**
  * @desc    Add new family member
@@ -11,19 +12,86 @@ const logger = require('../utils/logger');
  * @access  Private
  */
 exports.addFamilyMember = asyncHandler(async (req, res) => {
-    const { name, relationship, age, medicalNotes } = req.body;
+    const { name, relationship, age, medicalNotes, email } = req.body;
 
+    // Validate email is provided
+    if (!email) {
+        const { ValidationError } = require('../utils/errors');
+        throw new ValidationError('Email is required for family members');
+    }
+
+    // Check for duplicate family member (email must be unique per admin)
+    const existingMember = await FamilyMember.findOne({
+        email: { $regex: new RegExp(`^${email}$`, 'i') },
+        user: req.user._id,
+    });
+
+    if (existingMember) {
+        const { ValidationError } = require('../utils/errors');
+        throw new ValidationError(`Family member with email "${email}" already exists in your account.`);
+    }
+
+    // Create the family member
     const familyMember = await FamilyMember.create({
         name,
         relationship,
         age,
         medicalNotes,
+        email,
         user: req.user._id,
     });
 
+    // Send invitation email
+    let emailSent = false;
+    try {
+        logger.info('Attempting to send invitation email', {
+            familyMemberEmail: email,
+            familyMemberName: name,
+            adminName: req.user.name
+        });
+
+        emailSent = await sendInviteEmail(
+            email,
+            name,
+            req.user.name || 'Your Admin',
+            req.user.email
+        );
+
+        if (emailSent) {
+            logger.info('Invitation email sent successfully', {
+                familyMemberId: familyMember._id,
+                email
+            });
+        } else {
+            logger.warn('Email service returned false - email may not be configured', {
+                familyMemberId: familyMember._id,
+                email
+            });
+        }
+    } catch (emailError) {
+        logger.error('Error sending invitation email (but family member was created)', {
+            error: emailError.message,
+            familyMemberId: familyMember._id,
+            email,
+        });
+        // Don't throw - let the request succeed even if email fails
+    }
+
+    // Mark as invited regardless of email success (for tracking)
+    familyMember.invited = true;
+    await familyMember.save();
+
     logger.logRequest(req, 'Family member created', { familyMemberId: familyMember._id });
 
-    res.status(201).json(responseHandler.created(familyMember, 'Family member added successfully'));
+    // Return response with email status
+    const responseMessage = emailSent
+        ? 'Family member added successfully and invitation email sent!'
+        : 'Family member added successfully. (Note: Email notification could not be sent - check email configuration)';
+
+    res.status(201).json(responseHandler.created(
+        { ...familyMember.toObject(), emailSent },
+        responseMessage
+    ));
 });
 
 /**

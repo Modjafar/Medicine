@@ -47,10 +47,16 @@ export const AuthProvider = ({ children }) => {
             throw new Error('Authentication failed: No token received from server');
         }
 
+        // Ensure role is included
+        const userWithRole = {
+            ...userData,
+            role: userData.role || 'admin',
+        };
+
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-        return userData;
+        localStorage.setItem('user', JSON.stringify(userWithRole));
+        setUser(userWithRole);
+        return userWithRole;
     };
 
     const register = async (name, email, password) => {
@@ -62,10 +68,16 @@ export const AuthProvider = ({ children }) => {
             throw new Error('Registration failed: No token received from server');
         }
 
+        // Ensure role is included (should be 'admin' for new users)
+        const userWithRole = {
+            ...userData,
+            role: userData.role || 'admin',
+        };
+
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-        return userData;
+        localStorage.setItem('user', JSON.stringify(userWithRole));
+        setUser(userWithRole);
+        return userWithRole;
     };
 
     const logout = () => {
@@ -76,8 +88,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        const userWithRole = {
+            ...userData,
+            role: userData.role || 'admin',
+        };
+        setUser(userWithRole);
+        localStorage.setItem('user', JSON.stringify(userWithRole));
     };
 
     return (

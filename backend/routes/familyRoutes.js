@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const { adminOnly, checkFamilyMemberAccess } = require('../middleware/authorize');
 const {
     addFamilyMember,
     getFamilyMembers,
@@ -9,11 +10,17 @@ const {
     deleteFamilyMember,
 } = require('../controllers/familyController');
 
-router.post('/', protect, addFamilyMember);
-router.get('/', protect, getFamilyMembers);
-router.get('/:id', protect, getFamilyMemberById);
-router.put('/:id', protect, updateFamilyMember);
-router.delete('/:id', protect, deleteFamilyMember);
+// All routes require authentication
+router.use(protect);
+
+// Family management is admin-only
+router.use(adminOnly);
+
+router.post('/', addFamilyMember);
+router.get('/', getFamilyMembers);
+router.get('/:id', checkFamilyMemberAccess, getFamilyMemberById);
+router.put('/:id', checkFamilyMemberAccess, updateFamilyMember);
+router.delete('/:id', checkFamilyMemberAccess, deleteFamilyMember);
 
 module.exports = router;
 

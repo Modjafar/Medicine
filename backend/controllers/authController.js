@@ -28,6 +28,7 @@ exports.register = asyncHandler(async (req, res) => {
         name,
         email,
         password,
+        role: 'admin', // New users are always admin by default
     });
 
     logger.logRequest(req, 'New user registered', { userId: user._id });
@@ -36,6 +37,7 @@ exports.register = asyncHandler(async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
     }, 'Account created successfully'));
 });
@@ -64,6 +66,7 @@ exports.login = asyncHandler(async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
     }, 'Login successful'));
 });

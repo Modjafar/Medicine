@@ -1,21 +1,11 @@
-# MediTrack Real-Time Reminder System Implementation
+# TODO: Fix INTERNAL_SERVER_ERROR
 
-## Plan Summary
-**Goal**: Add popup notifications with alarm sound for medicine reminders
+## Plan Steps:
+- [x] Update backend/server.js: Add conditional check for frontend/build existence before static/SPA serving
+- [ ] (Optional) Enhance backend/middleware/globalErrorHandler.js: Handle ENOENT as operational error
+- [ ] Restart backend server
+- [ ] Test: Access http://localhost:5000/ should return 404 (notFound) instead of 500
+- [ ] Build frontend: cd frontend && npm run build
+- [ ] Verify logs: No more UNEXPECTED ERROR / INTERNAL_SERVER_ERROR for root path
 
-**Current Status**: Backend scheduler exists. Frontend polls every 30s with basic UI. Missing: sound, "Taken" button, persistent toast.
-
-**Files to Update**:
-1. `frontend/src/components/ReminderAlert.jsx` - Add alarm sound + Taken button
-2. `frontend/src/context/NotificationContext.js` - Add sound state, reduce polling to 60s, toast notifications
-3. `frontend/public/medicine-alarm.mp3` - Alarm sound file
-4. `frontend/src/services/notificationService.js` - Reduce polling interval
-5. Add `useSound` hook if needed
-
-**Follow-up Steps**:
-1. Install react-use-sound (if needed)
-2. Test reminder flow end-to-end
-3. Update README.md with new features
-
-**Next Step**: Update ReminderAlert.jsx with alarm sound and buttons
-
+Current progress: Starting implementation...

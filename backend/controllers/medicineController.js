@@ -15,6 +15,25 @@ const { scheduleReminders } = require('../utils/reminderScheduler');
 exports.addMedicine = asyncHandler(async (req, res) => {
     const { name, quantity, dosagePerDay, reminderTimes, startDate, endDate, instructions, unit, familyMember } = req.body;
 
+    // Check for duplicate medicine (case-insensitive)
+    const existingMedicine = await Medicine.findOne({
+        name: { $regex: new RegExp(`^${name}$`, 'i') },
+        user: req.user._id,
+    });
+
+    if (existingMedicine) {
+        throw new ValidationError(`Medicine "${name}" already exists for your account. Please use a different name or update the existing one.`);
+    }
+
+    // Validate reminderTimes based on dosagePerDay
+    if (dosagePerDay === 1 && reminderTimes.length > 1) {
+        throw new ValidationError('For 1 dose per day, only one reminder time is allowed.');
+    }
+
+    if (dosagePerDay > 1 && reminderTimes.length !== dosagePerDay) {
+        throw new ValidationError(`For ${dosagePerDay} doses per day, you must provide ${dosagePerDay} reminder times.`);
+    }
+
     const medicine = await Medicine.create({
         name,
         quantity,
@@ -42,8 +61,18 @@ exports.addMedicine = asyncHandler(async (req, res) => {
  */
 exports.getMedicines = asyncHandler(async (req, res) => {
     const { familyMember } = req.query;
-    const query = { user: req.user._id };
-    if (familyMember) query.familyMember = familyMember;
+
+    // Role-based filtering
+    let query = {};
+
+    if (req.user.role === 'admin') {
+        // Admin sees all medicines (owns them)
+        query.user = req.user._id;
+        if (familyMember) query.familyMember = familyMember;
+    } else if (req.user.role === 'family') {
+        // Family member sees only medicines assigned to them
+        query.assignedTo = req.user._id;
+    }
 
     const medicines = await Medicine.find(query).sort({ createdAt: -1 });
     res.json(responseHandler.success(medicines, 'Medicines retrieved successfully'));

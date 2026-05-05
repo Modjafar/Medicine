@@ -17,6 +17,7 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
 const familyRoutes = require('./routes/familyRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 connectDB();
 
@@ -59,19 +60,38 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'MediTrack API is running' });
 });
 
-// Serve static files from frontend build in production
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../frontend/build')));
+const fs = require('fs');
+const frontendBuildPath = path.join(__dirname, '../frontend/build');
+const frontendIndexPath = path.join(frontendBuildPath, 'index.html');
+
+// Serve static files from frontend build
+if (fs.existsSync(frontendBuildPath)) {
+    logger.info('Serving frontend build');
+    app.use(express.static(frontendBuildPath));
 
     // Handle React routing - serve index.html for all non-API routes
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+        res.sendFile(frontendIndexPath);
+    });
+} else {
+    logger.warn('Frontend build not found at', frontendBuildPath);
+
+    // Fallback root route when frontend build doesn't exist
+    app.get('/', (req, res) => {
+        res.json({
+            status: 'OK',
+            message: 'MediTrack API',
+            version: '1.0.0',
+            docs: 'API endpoints: /api/auth, /api/medicines, /api/reminders, /api/family, /api/history, /api/notifications',
+            health: '/api/health'
+        });
     });
 }
 

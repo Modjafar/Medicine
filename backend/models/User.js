@@ -32,6 +32,16 @@ const userSchema = new mongoose.Schema({
     notificationEnabled: {
         type: Boolean,
         default: true
+    },
+    role: {
+        type: String,
+        enum: ['admin', 'family'],
+        default: 'admin'
+    },
+    adminId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     }
 }, {
     timestamps: true

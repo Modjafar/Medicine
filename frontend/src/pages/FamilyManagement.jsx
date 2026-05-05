@@ -18,6 +18,7 @@ const FamilyManagement = () => {
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         name: '',
+        email: '',
         relationship: 'spouse',
         age: '',
         medicalNotes: '',
@@ -30,7 +31,8 @@ const FamilyManagement = () => {
     const fetchFamilyMembers = async () => {
         try {
             const response = await api.get('/family');
-            setFamilyMembers(response.data);
+            const data = response.data?.data || response.data;
+            setFamilyMembers(Array.isArray(data) ? data : []);
         } catch (error) {
             toast.error('Failed to load family members');
         } finally {
@@ -45,16 +47,39 @@ const FamilyManagement = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/family', {
+            const response = await api.post('/family', {
                 ...formData,
                 age: formData.age ? Number(formData.age) : undefined,
             });
-            toast.success('Family member added');
-            setFormData({ name: '', relationship: 'spouse', age: '', medicalNotes: '' });
+
+            // Check if email was sent successfully
+            const emailSent = response.data?.data?.emailSent;
+            const message = response.data?.message || 'Family member added';
+
+            if (emailSent) {
+                toast.success('✅ Family member added and invitation email sent!', {
+                    position: 'top-right',
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                });
+            } else {
+                toast.warn('⚠️ Family member added but email could not be sent (check email configuration)', {
+                    position: 'top-right',
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                });
+            }
+
+            // Reset form and refresh list
+            setFormData({ name: '', email: '', relationship: 'spouse', age: '', medicalNotes: '' });
             setShowAddForm(false);
             fetchFamilyMembers();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to add family member');
+            const errorMessage = error.response?.data?.message || 'Failed to add family member';
+            toast.error('❌ ' + errorMessage, {
+                position: 'top-right',
+                autoClose: 4000,
+            });
         }
     };
 
@@ -110,6 +135,19 @@ const FamilyManagement = () => {
                             />
                         </div>
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                className="input-field"
+                                placeholder="family@example.com"
+                                required
+                            />
+                            <p className="text-xs text-gray-500 mt-1">An invitation will be sent to this email</p>
+                        </div>
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Relationship *</label>
                             <select
                                 name="relationship"
@@ -152,7 +190,7 @@ const FamilyManagement = () => {
                         </div>
                         <div className="md:col-span-2">
                             <button type="submit" className="btn-primary">
-                                Add Member
+                                Add Member & Send Invitation
                             </button>
                         </div>
                     </form>

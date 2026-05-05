@@ -9,16 +9,28 @@ import {
     Settings,
     X,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, currentPath }) => {
-    const menuItems = [
+    const { user } = useAuth();
+
+    // Admin menu items
+    const adminMenuItems = [
         { path: '/', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/medicines', label: 'Medicines', icon: Pill },
         { path: '/medicines/add', label: 'Add Medicine', icon: PlusCircle },
         { path: '/history', label: 'History', icon: History },
-        { path: '/family', label: 'Family', icon: Users },
+        { path: '/family', label: 'Family Members', icon: Users },
         { path: '/profile', label: 'Profile', icon: Settings },
     ];
+
+    // Family member menu items
+    const familyMenuItems = [
+        { path: '/my-medicines', label: 'My Medicines', icon: Pill },
+        { path: '/profile', label: 'Profile', icon: Settings },
+    ];
+
+    const menuItems = user?.role === 'admin' ? adminMenuItems : familyMenuItems;
 
     return (
         <>
@@ -61,8 +73,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, currentPath }) => {
                 </nav>
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-                    <div className="text-xs text-gray-400 text-center">
-                        MediTrack v1.0
+                    <div className="text-xs text-gray-500 text-center">
+                        <p className="font-medium capitalize mb-1">{user?.role} User</p>
+                        <p className="text-gray-400">MediTrack v1.0</p>
                     </div>
                 </div>
             </aside>

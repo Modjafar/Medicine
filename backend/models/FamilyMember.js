@@ -29,10 +29,27 @@ const familyMemberSchema = new mongoose.Schema({
     medicalNotes: {
         type: String,
         default: ''
+    },
+    email: {
+        type: String,
+        required: [true, 'Please provide family member email'],
+        lowercase: true,
+        trim: true,
+        match: [
+            /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+            'Please provide a valid email'
+        ]
+    },
+    invited: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
 });
+
+// Compound unique index: no duplicate emails per admin (user)
+familyMemberSchema.index({ email: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model('FamilyMember', familyMemberSchema);
 

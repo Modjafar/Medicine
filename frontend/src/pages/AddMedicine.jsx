@@ -27,26 +27,52 @@ const AddMedicine = () => {
     const fetchFamilyMembers = async () => {
         try {
             const response = await api.get('/family');
-            setFamilyMembers(response.data);
+            const data = response.data?.data || response.data;
+            setFamilyMembers(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch family members');
         }
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+        const { name, value } = e.target;
 
-    const addReminderTime = () => {
-        setFormData({
-            ...formData,
-            reminderTimes: [...formData.reminderTimes, '12:00'],
-        });
-    };
+        // Special handling for dosagePerDay
+        if (name === 'dosagePerDay') {
+            const dosage = Number(value);
+            const currentTimes = formData.reminderTimes.length;
 
-    const removeReminderTime = (index) => {
-        const newTimes = formData.reminderTimes.filter((_, i) => i !== index);
-        setFormData({ ...formData, reminderTimes: newTimes });
+            if (dosage === 1) {
+                // Single dose - keep only first reminder time
+                setFormData({
+                    ...formData,
+                    dosagePerDay: value,
+                    reminderTimes: [formData.reminderTimes[0] || '08:00'],
+                });
+            } else {
+                // Multiple doses - adjust reminder times array
+                let newTimes = [...formData.reminderTimes];
+
+                if (newTimes.length < dosage) {
+                    // Add more times
+                    const defaultTimes = ['08:00', '14:00', '20:00', '02:00'];
+                    while (newTimes.length < dosage) {
+                        newTimes.push(defaultTimes[newTimes.length] || '12:00');
+                    }
+                } else if (newTimes.length > dosage) {
+                    // Remove extra times
+                    newTimes = newTimes.slice(0, dosage);
+                }
+
+                setFormData({
+                    ...formData,
+                    dosagePerDay: value,
+                    reminderTimes: newTimes,
+                });
+            }
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const updateReminderTime = (index, value) => {
@@ -57,6 +83,13 @@ const AddMedicine = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate reminder times count matches dosage
+        if (formData.reminderTimes.length !== Number(formData.dosagePerDay)) {
+            toast.error(`Please provide ${formData.dosagePerDay} reminder times`);
+            return;
+        }
+
         setLoading(true);
         try {
             await api.post('/medicines', {
@@ -199,38 +232,47 @@ const AddMedicine = () => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Reminder Times *
+                            {Number(formData.dosagePerDay) > 1 && (
+                                <span className="ml-2 text-xs font-normal text-gray-600">
+                                    ({formData.reminderTimes.length} time{formData.reminderTimes.length !== 1 ? 's' : ''} required)
+                                </span>
+                            )}
                         </label>
-                        <div className="space-y-2">
-                            {formData.reminderTimes.map((time, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Clock size={16} className="text-gray-400" />
-                                    <input
-                                        type="time"
-                                        value={time}
-                                        onChange={(e) => updateReminderTime(index, e.target.value)}
-                                        className="input-field w-auto"
-                                        required
-                                    />
-                                    {formData.reminderTimes.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeReminderTime(index)}
-                                            className="p-2 text-danger-600 hover:bg-danger-50 rounded-lg"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={addReminderTime}
-                            className="mt-2 text-sm text-primary-600 font-medium hover:underline flex items-center gap-1"
-                        >
-                            <Plus size={16} />
-                            Add another time
-                        </button>
+
+                        {Number(formData.dosagePerDay) === 1 ? (
+                            <div className="flex items-center gap-2">
+                                <Clock size={16} className="text-gray-400" />
+                                <input
+                                    type="time"
+                                    value={formData.reminderTimes[0]}
+                                    onChange={(e) => updateReminderTime(0, e.target.value)}
+                                    className="input-field w-auto"
+                                    required
+                                />
+                                <span className="text-sm text-gray-500">(1 dose per day)</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Set reminder time for each dose:
+                                </p>
+                                {formData.reminderTimes.map((time, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-500 min-w-[50px]">
+                                            Dose {index + 1}
+                                        </span>
+                                        <Clock size={16} className="text-gray-400" />
+                                        <input
+                                            type="time"
+                                            value={time}
+                                            onChange={(e) => updateReminderTime(index, e.target.value)}
+                                            className="input-field w-auto"
+                                            required
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div>
